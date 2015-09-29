@@ -68,7 +68,7 @@ func get(ctx *cli.Context) {
 	err = db.View(func(tx *bolt.Tx) error {
 		bkt := tx.Bucket([]byte(sBkt))
 		fmt.Println("|  ------------ Key  -----------  | ---------------- Value ---------------------")
-		indent := "                                      "
+		indent := "                                    "
 		return bkt.ForEach(func(k []byte, v []byte) error {
 			skey := string(k)
 			if len(skey) > maxKeySize {
@@ -79,7 +79,7 @@ func get(ctx *cli.Context) {
 			err := json.Unmarshal(v, &m)
 			if err == nil {
 				// Indent formatting looked bad
-				v, _ = json.MarshalIndent(m, indent, "")
+				v, _ = json.MarshalIndent(m, indent, "  ")
 			}
 			fmt.Printf(" %32s : %s\n", skey, string(v))
 			return nil
