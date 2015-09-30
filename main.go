@@ -65,8 +65,12 @@ func get(ctx *cli.Context) {
 	sBkt := args[0]
 	var err error
 	db := resolveDB(ctx)
+
 	err = db.View(func(tx *bolt.Tx) error {
 		bkt := tx.Bucket([]byte(sBkt))
+		if bkt == nil {
+			return fmt.Errorf("No bucket called: %s", sBkt)
+		}
 		fmt.Println("|  ------------ Key  -----------  | ---------------- Value ---------------------")
 		indent := "                                    "
 		return bkt.ForEach(func(k []byte, v []byte) error {
