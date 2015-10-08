@@ -57,6 +57,11 @@ func resolveDB(ctx *cli.Context) *bolt.DB {
 var ellipsis = []byte("...")
 var maxKeySize = 31
 
+type KV struct {
+	Key   string
+	Value interface{}
+}
+
 func get(ctx *cli.Context) {
 	args := ctx.Args()
 	if len(args) != 1 {
@@ -65,26 +70,30 @@ func get(ctx *cli.Context) {
 	sBkt := args[0]
 	var err error
 	db := resolveDB(ctx)
+	response := []KV{}
 	err = db.View(func(tx *bolt.Tx) error {
 		bkt := tx.Bucket([]byte(sBkt))
-		fmt.Println("|  ------------ Key  -----------  | ---------------- Value ---------------------")
-		indent := "                                    "
 		return bkt.ForEach(func(k []byte, v []byte) error {
-			skey := string(k)
-			if len(skey) > maxKeySize {
-				skey = skey[:28] + "..."
+			kv := KV{
+				Key: string(k),
 			}
 			// attempt json unmarshalling of value
-			var m map[string]interface{}
-			err := json.Unmarshal(v, &m)
-			if err == nil {
-				// Indent formatting looked bad
-				v, _ = json.MarshalIndent(m, indent, "  ")
+			err := json.Unmarshal(v, &kv.Value)
+			if err != nil {
+				kv.Value = "failed to unmarshal value: " + err.Error()
 			}
-			fmt.Printf(" %32s : %s\n", skey, string(v))
+
+			if len(kv.Key) > 0 {
+				response = append(response, kv)
+			}
 			return nil
 		})
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	enc := json.NewEncoder(os.Stdout)
+	err = enc.Encode(response)
 	if err != nil {
 		log.Fatal(err)
 	}
