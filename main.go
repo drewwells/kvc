@@ -73,6 +73,9 @@ func get(ctx *cli.Context) {
 	response := []KV{}
 	err = db.View(func(tx *bolt.Tx) error {
 		bkt := tx.Bucket([]byte(sBkt))
+		if bkt == nil {
+			return fmt.Errorf("No bucket called: %s", sBkt)
+		}
 		return bkt.ForEach(func(k []byte, v []byte) error {
 			kv := KV{
 				Key: string(k),
@@ -107,7 +110,6 @@ func list(ctx *cli.Context) {
 
 	err = db.View(func(tx *bolt.Tx) error {
 		err := tx.ForEach(func(name []byte, bkt *bolt.Bucket) error {
-			_ = bkt
 			fmt.Println(string(name))
 			return nil
 		})
